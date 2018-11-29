@@ -41,3 +41,39 @@ mailrelay --config=/home/myname/mailrelay.json
 
 Configure your scanner or other device to send SMTP mail to server `192.168.1.54:2525`. Each email will be relayed to `smtp.fastmail.com` using the credentials above, including any file attachments.
 
+## Example 2 (Linux - Systemd service)
+
+Create configuration file as above, and also create,
+
+/etc/systemd/system/mailrelay.service
+
+```ini
+[Unit]
+Description=Mail Relay Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+ExecStart=/usr/local/bin/mailrelay
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Copy `mailrelay` to `/usr/local/bin/`.
+
+Run,
+
+```Bash
+sudo systemctl start mailrelay
+sudo systemctl enable mailrelay
+```
+
+Now `mailrelay` runs as a service daemon and will automatically start after reboot.
+
+## Feedback
+
+Send any questions or comments to wiggin77@warpmail.net
