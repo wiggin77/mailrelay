@@ -12,9 +12,11 @@ import (
 // Start starts the server.
 func Start(appConfig *mailRelayConfig) (err error) {
 
+	listen := fmt.Sprintf("%s:%d", appConfig.LocalListenIP, appConfig.LocalListenPort)
+
 	cfg := &guerrilla.AppConfig{LogFile: log.OutputStdout.String(), AllowedHosts: []string{"warpmail.net"}}
 	sc := guerrilla.ServerConfig{
-		ListenInterface: "0.0.0.0:2525",
+		ListenInterface: listen,
 		IsEnabled:       true,
 	}
 	cfg.Servers = append(cfg.Servers, sc)
@@ -24,10 +26,10 @@ func Start(appConfig *mailRelayConfig) (err error) {
 		"save_process":       "HeadersParser|Header|Hasher|Debugger|MailRelay",
 		"log_received_mails": true,
 		"primary_mail_host":  "homeoffice.com",
-		"username":           appConfig.Username,
-		"password":           appConfig.Password,
-		"server":             appConfig.Server,
-		"port":               appConfig.Port,
+		"smtp_username":      appConfig.SMTPUsername,
+		"smtp_password":      appConfig.SMTPPassword,
+		"smtp_server":        appConfig.SMTPServer,
+		"smtp_port":          appConfig.SMTPPort,
 	}
 	cfg.BackendConfig = bcfg
 
@@ -37,16 +39,23 @@ func Start(appConfig *mailRelayConfig) (err error) {
 	return d.Start()
 }
 
+type relayConfig struct {
+	SMTPServer   string `json:"smtp_server"`
+	SMTPPort     int    `json:"smtp_port"`
+	SMTPUsername string `json:"smtp_username"`
+	SMTPPassword string `json:"smtp_password"`
+}
+
 // mailRelayProcessor decorator relays emails to another SMTP server.
 var mailRelayProcessor = func() backends.Decorator {
-	config := &mailRelayConfig{}
+	config := &relayConfig{}
 	initFunc := backends.InitializeWith(func(backendConfig backends.BackendConfig) error {
-		configType := backends.BaseConfig(&mailRelayConfig{})
+		configType := backends.BaseConfig(&relayConfig{})
 		bcfg, err := backends.Svc.ExtractConfig(backendConfig, configType)
 		if err != nil {
 			return err
 		}
-		config = bcfg.(*mailRelayConfig)
+		config = bcfg.(*relayConfig)
 		return nil
 	})
 	backends.Svc.AddInitializer(initFunc)

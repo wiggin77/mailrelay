@@ -17,8 +17,8 @@ type closeable interface {
 }
 
 // sendMail sends the contents of the envelope to a SMTP server.
-func sendMail(e *mail.Envelope, config *mailRelayConfig) error {
-	server := fmt.Sprintf("%s:%d", config.Server, config.Port)
+func sendMail(e *mail.Envelope, config *relayConfig) error {
+	server := fmt.Sprintf("%s:%d", config.SMTPServer, config.SMTPPort)
 	to := getTo(e)
 
 	var msg bytes.Buffer
@@ -34,14 +34,14 @@ func sendMail(e *mail.Envelope, config *mailRelayConfig) error {
 
 	tlsconfig := &tls.Config{
 		InsecureSkipVerify: true,
-		ServerName:         config.Server,
+		ServerName:         config.SMTPServer,
 	}
 
 	if conn, err = tls.Dial("tcp", server, tlsconfig); err != nil {
 		return errors.Wrap(err, "dial error")
 	}
 
-	if client, err = smtp.NewClient(conn, config.Server); err != nil {
+	if client, err = smtp.NewClient(conn, config.SMTPServer); err != nil {
 		close(conn, "conn")
 		return errors.Wrap(err, "newclient error")
 	}
@@ -52,7 +52,7 @@ func sendMail(e *mail.Envelope, config *mailRelayConfig) error {
 		}
 	}(&shouldCloseClient)
 
-	auth := smtp.PlainAuth("", config.Username, config.Password, config.Server)
+	auth := smtp.PlainAuth("", config.SMTPUsername, config.SMTPPassword, config.SMTPServer)
 	if err = client.Auth(auth); err != nil {
 		return errors.Wrap(err, "auth error")
 	}

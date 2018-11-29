@@ -15,10 +15,12 @@ type loggerLevels struct {
 }
 
 type mailRelayConfig struct {
-	Server   string `json:"server"`
-	Port     int    `json:"port"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	SMTPServer      string `json:"smtp_server"`
+	SMTPPort        int    `json:"smtp_port"`
+	SMTPUsername    string `json:"smtp_username"`
+	SMTPPassword    string `json:"smtp_password"`
+	LocalListenIP   string `json:"local_listen_ip"`
+	LocalListenPort int    `json:"local_listen_port"`
 }
 
 // Logger provides application logging.
