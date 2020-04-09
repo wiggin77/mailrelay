@@ -5,4 +5,5 @@
 	"smtp_password": "secret_app_password",
 	"local_listen_port": 2525,
 	"local_listen_ip": "0.0.0.0"
+	"allowed_hosts": ["*"]
 }

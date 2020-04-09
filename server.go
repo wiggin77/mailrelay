@@ -14,7 +14,7 @@ func Start(appConfig *mailRelayConfig) (err error) {
 
 	listen := fmt.Sprintf("%s:%d", appConfig.LocalListenIP, appConfig.LocalListenPort)
 
-	cfg := &guerrilla.AppConfig{LogFile: log.OutputStdout.String(), AllowedHosts: []string{"warpmail.net"}}
+	cfg := &guerrilla.AppConfig{LogFile: log.OutputStdout.String(), AllowedHosts: appConfig.AllowedHosts}
 	sc := guerrilla.ServerConfig{
 		ListenInterface: listen,
 		IsEnabled:       true,
