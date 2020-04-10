@@ -77,6 +77,15 @@ sudo systemctl enable mailrelay
 
 Now `mailrelay` runs as a service daemon and will automatically start after reboot.
 
+## Example 3 (Docker)
+
+edit mailrelay.json as needed then build container and run it
+
+```
+docker build  -t mailrelay .
+docker run -v $PWD/mailrelay.json:/etc/mailrelay.json mailrelay
+```
+
 ## Feedback
 
 Send any questions or comments to wiggin77@warpmail.net
