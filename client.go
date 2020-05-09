@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"net"
 	"net/smtp"
 	"net/textproto"
 
@@ -25,10 +26,9 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 	msg.Write(e.Data.Bytes())
 	msg.WriteString("\r\n")
 
-	fmt.Println("==== Starting email send ====")
-	defer fmt.Println("==== Finished email send ====")
+	Logger.Infof("starting email send -- from:%s, starttls:%t", e.MailFrom.String(), config.STARTTLS)
 	var err error
-	var conn *tls.Conn
+	var conn net.Conn
 	var client *smtp.Client
 	var writer io.WriteCloser
 
@@ -37,8 +37,14 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 		ServerName:         config.SMTPServer,
 	}
 
-	if conn, err = tls.Dial("tcp", server, tlsconfig); err != nil {
-		return errors.Wrap(err, "dial error")
+	if config.STARTTLS {
+		if conn, err = net.Dial("tcp", server); err != nil {
+			return errors.Wrap(err, "dial error")
+		}
+	} else {
+		if conn, err = tls.Dial("tcp", server, tlsconfig); err != nil {
+			return errors.Wrap(err, "TLS dial error")
+		}
 	}
 
 	if client, err = smtp.NewClient(conn, config.SMTPServer); err != nil {
@@ -51,6 +57,12 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 			close(client, "client")
 		}
 	}(&shouldCloseClient)
+
+	if config.STARTTLS {
+		if err = client.StartTLS(tlsconfig); err != nil {
+			return errors.Wrap(err, "starttls error")
+		}
+	}
 
 	auth := smtp.PlainAuth("", config.SMTPUsername, config.SMTPPassword, config.SMTPServer)
 	if err = client.Auth(auth); err != nil {
@@ -82,6 +94,7 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 	// We only need to close client if some other error prevented us
 	// from getting to `client.Quit`
 	shouldCloseClient = false
+	Logger.Info("email sent with no errors.")
 	return nil
 }
 
@@ -113,11 +126,4 @@ func getTo(e *mail.Envelope) []string {
 		ret = append(ret, addy.String())
 	}
 	return ret
-}
-
-func display(b []byte) {
-	s := string(b)
-	fmt.Println("################################")
-	fmt.Printf("%s\n", s)
-	fmt.Println("################################")
 }

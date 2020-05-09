@@ -12,6 +12,22 @@ Run `mailrelay` on a local PC and set your device (e.g. scanner) to send mail to
 
 `mailrelay` is written in Go, and can be compiled for any Go supported platform including Linux, MacOS, Windows.
 
+## Encryption
+
+`mailrelay` uses TLS to connect to your SMTP provider. By default implicit TLS connections are assumed, meaning the connection is established
+using TLS at the socket level. This is in accordance with [RFC 8314 section 3](https://tools.ietf.org/html/rfc8314#section-3). These connections usually use port 465.
+
+However, some providers do not adhere to this recommendation (I'm looking at you Office365!) and only support the legacy STARTTLS command, which expects a non-encrypted socket connection at first, which is then upgraded to TLS. To enable this, set `smtp_starttls` to `true` in your config.
+These connections usually use port 587.
+
+## Testing your configuration
+
+You can send a test email using the `-test` flag. A email will be sent using the SMTP provider specified in your `mailrelay.json` configuration.
+
+```bash
+./mailrelay -config=./mailrelay.json -test -sender=dlauder@warpmail.net -rcpt=ender.wiggin@warpmail.net
+```
+
 ## Example (Linux)
 
 On local PC (192.168.1.54) create file `/etc/mailrelay.json` with contents:
@@ -22,6 +38,7 @@ On local PC (192.168.1.54) create file `/etc/mailrelay.json` with contents:
 {
     "smtp_server":   "smtp.fastmail.com",
     "smtp_port":     465,
+    "smtp_starttls": false,
     "smtp_username": "username@fastmail.com",
     "smtp_password": "secretAppPassword",
     "local_listen_ip": "0.0.0.0",

@@ -10,11 +10,20 @@ import (
 )
 
 // Start starts the server.
-func Start(appConfig *mailRelayConfig) (err error) {
+func Start(appConfig *mailRelayConfig, verbose bool) (err error) {
 
 	listen := fmt.Sprintf("%s:%d", appConfig.LocalListenIP, appConfig.LocalListenPort)
 
-	cfg := &guerrilla.AppConfig{LogFile: log.OutputStdout.String(), AllowedHosts: appConfig.AllowedHosts}
+	logLevel := "info"
+	if verbose {
+		logLevel = "debug"
+	}
+
+	cfg := &guerrilla.AppConfig{
+		LogFile:      log.OutputStdout.String(),
+		AllowedHosts: appConfig.AllowedHosts,
+		LogLevel:     logLevel,
+	}
 	sc := guerrilla.ServerConfig{
 		ListenInterface: listen,
 		IsEnabled:       true,
@@ -30,6 +39,7 @@ func Start(appConfig *mailRelayConfig) (err error) {
 		"smtp_password":      appConfig.SMTPPassword,
 		"smtp_server":        appConfig.SMTPServer,
 		"smtp_port":          appConfig.SMTPPort,
+		"smtp_starttls":      appConfig.SMTPStartTLS,
 	}
 	cfg.BackendConfig = bcfg
 
@@ -42,6 +52,7 @@ func Start(appConfig *mailRelayConfig) (err error) {
 type relayConfig struct {
 	SMTPServer   string `json:"smtp_server"`
 	SMTPPort     int    `json:"smtp_port"`
+	STARTTLS     bool   `json:"smtp_starttls"`
 	SMTPUsername string `json:"smtp_username"`
 	SMTPPassword string `json:"smtp_password"`
 }
@@ -67,8 +78,7 @@ var mailRelayProcessor = func() backends.Decorator {
 
 					err := sendMail(e, config)
 					if err != nil {
-						fmt.Printf("!!! %v\n", err)
-						return backends.NewResult(fmt.Sprintf("554 Error: %s", err)), err
+						return backends.NewResult(err.Error()), err
 					}
 
 					return p.Process(e, task)
