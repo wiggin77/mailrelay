@@ -8,7 +8,7 @@
 
 Some older appliances such as scanners, multi-function printers, RAID cards or NAS boxes with monitoring, can only send email without any authentication or encryption over port 25. `mailrelay` can send those emails to your Gmail, Fastmail or other provider.
 
-Run `mailrelay` on a local PC and set your device (e.g. scanner) to send mail to that PC.
+Run `mailrelay` on a local PC or server and set your device (e.g. scanner) to send mail to it.
 
 `mailrelay` is written in Go, and can be compiled for any Go supported platform including Linux, MacOS, Windows.
 
