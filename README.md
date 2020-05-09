@@ -4,6 +4,8 @@
 
 `mailrelay` is a simple mail relay that can take unauthenticated SMTP emails (e.g. over port 25) and relay them to authenticated, TLS-enabled SMTP servers. Plus it's easy to configure.
 
+Prebuilt binaries are available [here](https://github.com/wiggin77/mailrelay/releases/latest) for Linux, MacOS, Windows, OpenBSD.
+
 ## Use case
 
 Some older appliances such as scanners, multi-function printers, RAID cards or NAS boxes with monitoring, can only send email without any authentication or encryption over port 25. `mailrelay` can send those emails to your Gmail, Fastmail or other provider.
