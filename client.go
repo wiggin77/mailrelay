@@ -19,7 +19,7 @@ type closeable interface {
 
 // sendMail sends the contents of the envelope to a SMTP server.
 func sendMail(e *mail.Envelope, config *relayConfig) error {
-	server := fmt.Sprintf("%s:%d", config.SMTPServer, config.SMTPPort)
+	server := fmt.Sprintf("%s:%d", config.Server, config.Port)
 	to := getTo(e)
 
 	var msg bytes.Buffer
@@ -33,8 +33,8 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 	var writer io.WriteCloser
 
 	tlsconfig := &tls.Config{
-		InsecureSkipVerify: true,
-		ServerName:         config.SMTPServer,
+		InsecureSkipVerify: config.SkipVerify, //nolint:gosec
+		ServerName:         config.Server,
 	}
 
 	if config.STARTTLS {
@@ -47,7 +47,7 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 		}
 	}
 
-	if client, err = smtp.NewClient(conn, config.SMTPServer); err != nil {
+	if client, err = smtp.NewClient(conn, config.Server); err != nil {
 		close(conn, "conn")
 		return errors.Wrap(err, "newclient error")
 	}
@@ -58,15 +58,8 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 		}
 	}(&shouldCloseClient)
 
-	if config.STARTTLS {
-		if err = client.StartTLS(tlsconfig); err != nil {
-			return errors.Wrap(err, "starttls error")
-		}
-	}
-
-	auth := smtp.PlainAuth("", config.SMTPUsername, config.SMTPPassword, config.SMTPServer)
-	if err = client.Auth(auth); err != nil {
-		return errors.Wrap(err, "auth error")
+	if err = handshake(client, config, tlsconfig); err != nil {
+		return err
 	}
 
 	if err = client.Mail(e.MailFrom.String()); err != nil {
@@ -98,10 +91,30 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 	return nil
 }
 
+func handshake(client *smtp.Client, config *relayConfig, tlsConfig *tls.Config) error {
+	if config.STARTTLS {
+		if err := client.StartTLS(tlsConfig); err != nil {
+			return errors.Wrap(err, "starttls error")
+		}
+	}
+
+	var auth smtp.Auth
+	if config.LoginAuthType {
+		auth = LoginAuth(config.Username, config.Password)
+	} else {
+		auth = smtp.PlainAuth("", config.Username, config.Password, config.Server)
+	}
+
+	if err := client.Auth(auth); err != nil {
+		return errors.Wrap(err, "auth error")
+	}
+	return nil
+}
+
 func close(c closeable, what string) {
 	err := c.Close()
 	if err != nil {
-		fmt.Printf("!!!!! Error closing %s: %v\n", what, err)
+		fmt.Printf("Error closing %s: %v\n", what, err)
 	}
 }
 
@@ -122,8 +135,8 @@ func isQuitError(err error) bool {
 // getTo returns the array of email addresses in the envelope.
 func getTo(e *mail.Envelope) []string {
 	var ret []string
-	for _, addy := range e.RcptTo {
-		ret = append(ret, addy.String())
+	for i := range e.RcptTo {
+		ret = append(ret, e.RcptTo[i].String())
 	}
 	return ret
 }
