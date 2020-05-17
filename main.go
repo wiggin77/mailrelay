@@ -12,6 +12,7 @@ import (
 	log "github.com/flashmob/go-guerrilla/log"
 )
 
+// Logger is the global logger
 var Logger log.Logger
 
 type mailRelayConfig struct {
