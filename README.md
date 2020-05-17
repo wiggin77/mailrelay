@@ -12,14 +12,14 @@ Some older appliances such as scanners, multi-function printers, RAID cards or N
 
 Run `mailrelay` on a local PC or server and set your device (e.g. scanner) to send mail to it.
 
-`mailrelay` is written in Go, and can be compiled for any Go supported platform including Linux, MacOS, Windows.
+`mailrelay` can be compiled for any Go supported platform including Linux, MacOS, Windows.
 
 ## Encryption
 
 `mailrelay` uses TLS to connect to your SMTP provider. By default implicit TLS connections are assumed, meaning the connection is established
 using TLS at the socket level. This is in accordance with [RFC 8314 section 3](https://tools.ietf.org/html/rfc8314#section-3). These connections usually use port 465.
 
-However, some providers do not adhere to this recommendation (I'm looking at you Office365!) and only support the legacy STARTTLS command, which expects a non-encrypted socket connection at first, which is then upgraded to TLS. To enable this, set `smtp_starttls` to `true` in your config.
+However, some providers do not adhere to this recommendation (I'm looking at you Office365!) and only support the legacy STARTTLS command, which expects a non-encrypted socket connection at first, which is then upgraded to TLS. To enable this, set `smtp_starttls` to `true` in your config. You may also need to set `smtp_login_auth_type` to `true` which enables the legacy [LOGIN authentication](https://www.ietf.org/archive/id/draft-murchison-sasl-login-00.txt) method.
 These connections usually use port 587.
 
 ## Testing your configuration
@@ -43,6 +43,7 @@ On local PC (192.168.1.54) create file `/etc/mailrelay.json` with contents:
     "smtp_starttls": false,
     "smtp_username": "username@fastmail.com",
     "smtp_password": "secretAppPassword",
+    "smtp_login_auth_type": false,
     "local_listen_ip": "0.0.0.0",
     "local_listen_port": 2525,
     "allowed_hosts": ["*"]

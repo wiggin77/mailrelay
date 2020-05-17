@@ -1,5 +1,8 @@
 {
 	"cSpell.words": [
-		"myname"
+		"myname",
+		"HELO",
+		"EHLO",
+		"gosec"
 	]
 }

@@ -15,14 +15,16 @@ import (
 var Logger log.Logger
 
 type mailRelayConfig struct {
-	SMTPServer      string   `json:"smtp_server"`
-	SMTPPort        int      `json:"smtp_port"`
-	SMTPStartTLS    bool     `json:"smtp_starttls"`
-	SMTPUsername    string   `json:"smtp_username"`
-	SMTPPassword    string   `json:"smtp_password"`
-	LocalListenIP   string   `json:"local_listen_ip"`
-	LocalListenPort int      `json:"local_listen_port"`
-	AllowedHosts    []string `json:"allowed_hosts"`
+	SMTPServer        string   `json:"smtp_server"`
+	SMTPPort          int      `json:"smtp_port"`
+	SMTPStartTLS      bool     `json:"smtp_starttls"`
+	SMTPLoginAuthType bool     `json:"smtp_login_auth_type"`
+	SMTPUsername      string   `json:"smtp_username"`
+	SMTPPassword      string   `json:"smtp_password"`
+	SkipCertVerify    bool     `json:"smtp_skip_cert_verify"`
+	LocalListenIP     string   `json:"local_listen_ip"`
+	LocalListenPort   int      `json:"local_listen_port"`
+	AllowedHosts      []string `json:"allowed_hosts"`
 }
 
 func main() {
@@ -114,18 +116,18 @@ func sendTest(sender string, rcpt string, port int) error {
 		return err
 	}
 
-	writeBody := func(c *smtp.Client) error {
-		wc, err := conn.Data()
-		if err != nil {
-			return err
-		}
-		defer wc.Close()
-		_, err = fmt.Fprintf(wc, "From: %s\nSubject: Test message\n\nThis is a test email from mailrelay.\n", sender)
+	if err := writeBody(conn, sender); err != nil {
 		return err
 	}
-	if err := writeBody(conn); err != nil {
-		return err
-	}
-
 	return conn.Quit()
+}
+
+func writeBody(conn *smtp.Client, sender string) error {
+	wc, err := conn.Data()
+	if err != nil {
+		return err
+	}
+	defer wc.Close()
+	_, err = fmt.Fprintf(wc, "From: %s\nSubject: Test message\n\nThis is a test email from mailrelay.\n", sender)
+	return err
 }

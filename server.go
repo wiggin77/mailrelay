@@ -9,9 +9,10 @@ import (
 	"github.com/flashmob/go-guerrilla/mail"
 )
 
+const saveWorkersSize = 3
+
 // Start starts the server.
 func Start(appConfig *mailRelayConfig, verbose bool) (err error) {
-
 	listen := fmt.Sprintf("%s:%d", appConfig.LocalListenIP, appConfig.LocalListenPort)
 
 	logLevel := "info"
@@ -31,15 +32,17 @@ func Start(appConfig *mailRelayConfig, verbose bool) (err error) {
 	cfg.Servers = append(cfg.Servers, sc)
 
 	bcfg := backends.BackendConfig{
-		"save_workers_size":  3,
-		"save_process":       "HeadersParser|Header|Hasher|Debugger|MailRelay",
-		"log_received_mails": true,
-		"primary_mail_host":  "homeoffice.com",
-		"smtp_username":      appConfig.SMTPUsername,
-		"smtp_password":      appConfig.SMTPPassword,
-		"smtp_server":        appConfig.SMTPServer,
-		"smtp_port":          appConfig.SMTPPort,
-		"smtp_starttls":      appConfig.SMTPStartTLS,
+		"save_workers_size":     saveWorkersSize,
+		"save_process":          "HeadersParser|Header|Hasher|Debugger|MailRelay",
+		"log_received_mails":    true,
+		"primary_mail_host":     "homeoffice.com",
+		"smtp_username":         appConfig.SMTPUsername,
+		"smtp_password":         appConfig.SMTPPassword,
+		"smtp_server":           appConfig.SMTPServer,
+		"smtp_port":             appConfig.SMTPPort,
+		"smtp_starttls":         appConfig.SMTPStartTLS,
+		"smtp_login_auth_type":  appConfig.SMTPLoginAuthType,
+		"smtp_skip_cert_verify": appConfig.SkipCertVerify,
 	}
 	cfg.BackendConfig = bcfg
 
@@ -50,11 +53,13 @@ func Start(appConfig *mailRelayConfig, verbose bool) (err error) {
 }
 
 type relayConfig struct {
-	SMTPServer   string `json:"smtp_server"`
-	SMTPPort     int    `json:"smtp_port"`
-	STARTTLS     bool   `json:"smtp_starttls"`
-	SMTPUsername string `json:"smtp_username"`
-	SMTPPassword string `json:"smtp_password"`
+	Server        string `json:"smtp_server"`
+	Port          int    `json:"smtp_port"`
+	STARTTLS      bool   `json:"smtp_starttls"`
+	LoginAuthType bool   `json:"smtp_login_auth_type"`
+	Username      string `json:"smtp_username"`
+	Password      string `json:"smtp_password"`
+	SkipVerify    bool   `json:"smtp_skip_cert_verify"`
 }
 
 // mailRelayProcessor decorator relays emails to another SMTP server.
