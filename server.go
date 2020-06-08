@@ -9,7 +9,9 @@ import (
 	"github.com/flashmob/go-guerrilla/mail"
 )
 
-const saveWorkersSize = 3
+const (
+	saveWorkersSize = 3
+)
 
 // Start starts the server.
 func Start(appConfig *mailRelayConfig, verbose bool) (err error) {
@@ -28,6 +30,8 @@ func Start(appConfig *mailRelayConfig, verbose bool) (err error) {
 	sc := guerrilla.ServerConfig{
 		ListenInterface: listen,
 		IsEnabled:       true,
+		MaxSize:         appConfig.MaxEmailSize,
+		Timeout:         appConfig.TimeoutSecs,
 	}
 	cfg.Servers = append(cfg.Servers, sc)
 

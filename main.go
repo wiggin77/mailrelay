@@ -12,6 +12,14 @@ import (
 	log "github.com/flashmob/go-guerrilla/log"
 )
 
+const (
+	DefaultSTMPPort        = 465
+	DefaultMaxEmailSize    = (10 << 23) // 83 MB
+	DefaultLocalListenIP   = "0.0.0.0"
+	DefaultLocalListenPort = 2525
+	DefaultTimeoutSecs     = 300 // 5 minutes
+)
+
 // Logger is the global logger
 var Logger log.Logger
 
@@ -23,9 +31,11 @@ type mailRelayConfig struct {
 	SMTPUsername      string   `json:"smtp_username"`
 	SMTPPassword      string   `json:"smtp_password"`
 	SkipCertVerify    bool     `json:"smtp_skip_cert_verify"`
+	MaxEmailSize      int64    `json:"smtp_max_email_size"`
 	LocalListenIP     string   `json:"local_listen_ip"`
 	LocalListenPort   int      `json:"local_listen_port"`
 	AllowedHosts      []string `json:"allowed_hosts"`
+	TimeoutSecs       int      `json:"timeout_secs"`
 }
 
 func main() {
@@ -90,6 +100,8 @@ func run() error {
 
 func loadConfig(path string) (*mailRelayConfig, error) {
 	var cfg mailRelayConfig
+	configDefaults(&cfg)
+
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -101,6 +113,18 @@ func loadConfig(path string) (*mailRelayConfig, error) {
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+func configDefaults(config *mailRelayConfig) {
+	config.SMTPPort = DefaultSTMPPort
+	config.SMTPStartTLS = false
+	config.SMTPLoginAuthType = false
+	config.MaxEmailSize = DefaultMaxEmailSize
+	config.SkipCertVerify = false
+	config.LocalListenIP = DefaultLocalListenIP
+	config.LocalListenPort = DefaultLocalListenPort
+	config.AllowedHosts = []string{"*"}
+	config.TimeoutSecs = DefaultTimeoutSecs
 }
 
 // sendTest sends a test message to the SMTP server specified in mailrelay.json
