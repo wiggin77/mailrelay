@@ -27,10 +27,17 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 	msg.WriteString("\r\n")
 
 	Logger.Infof("starting email send -- from:%s, starttls:%t", e.MailFrom.String(), config.STARTTLS)
+	Logger.Infof("Client Remote IP: %s", e.RemoteIP)
+
 	var err error
 	var conn net.Conn
 	var client *smtp.Client
 	var writer io.WriteCloser
+
+	if AllowedSendersFilter.Blocked(e.RemoteIP) {
+		Logger.Info("Remote IP of " + e.RemoteIP + " not allowed to send email.")
+		return errors.Wrap(err, "Remote IP of "+e.RemoteIP+" not allowed to send email.")
+	}
 
 	tlsconfig := &tls.Config{
 		InsecureSkipVerify: config.SkipVerify, //nolint:gosec

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"syscall"
 
 	log "github.com/flashmob/go-guerrilla/log"
+	"github.com/jpillora/ipfilter"
 )
 
 const (
@@ -23,6 +25,9 @@ const (
 // Logger is the global logger
 var Logger log.Logger
 
+// Global List of Allowed Sender IPs:
+var AllowedSendersFilter = ipfilter.New(ipfilter.Options{})
+
 type mailRelayConfig struct {
 	SMTPServer        string   `json:"smtp_server"`
 	SMTPPort          int      `json:"smtp_port"`
@@ -35,6 +40,7 @@ type mailRelayConfig struct {
 	LocalListenIP     string   `json:"local_listen_ip"`
 	LocalListenPort   int      `json:"local_listen_port"`
 	AllowedHosts      []string `json:"allowed_hosts"`
+	AllowedSenders    string   `json:"allowed_senders"`
 	TimeoutSecs       int      `json:"timeout_secs"`
 }
 
@@ -52,18 +58,50 @@ func run() error {
 	var test bool
 	var testsender string
 	var testrcpt string
+	var checkIP bool
+	var ipToCheck string
 	var verbose bool
 	flag.StringVar(&configFile, "config", "/etc/mailrelay.json", "specifies JSON config file")
 	flag.BoolVar(&test, "test", false, "sends a test message to SMTP server")
 	flag.StringVar(&testsender, "sender", "", "used with 'test' to specify sender email address")
 	flag.StringVar(&testrcpt, "rcpt", "", "used with 'test' to specify recipient email address")
 	flag.BoolVar(&verbose, "verbose", false, "verbose output")
+	flag.BoolVar(&checkIP, "checkIP", false, "Checks a provided IP address to see if it would be allowed")
+	flag.StringVar(&ipToCheck, "ip", "", "used with 'checkIP' to specify IP address to test")
 	flag.Parse()
 
 	appConfig, err := loadConfig(configFile)
 	if err != nil {
 		flag.Usage()
 		return fmt.Errorf("loading config: %w", err)
+	}
+
+	if appConfig.AllowedSenders != "*" {
+		file, err := os.Open(appConfig.AllowedSenders)
+
+		if err != nil {
+			return fmt.Errorf("failed opening file: %s", err)
+		}
+
+		scanner := bufio.NewScanner(file)
+		scanner.Split(bufio.ScanLines)
+		var allowedIPsAndRanges []string
+
+		for scanner.Scan() {
+			allowedIPsAndRanges = append(allowedIPsAndRanges, scanner.Text())
+		}
+
+		file.Close()
+
+		for _, eachline := range allowedIPsAndRanges {
+			fmt.Println(eachline)
+		}
+
+		AllowedSendersFilter = ipfilter.New(ipfilter.Options{
+			//AllowedIPs:     []string{"192.168.0.0/24"},
+			AllowedIPs:     allowedIPsAndRanges,
+			BlockByDefault: true,
+		})
 	}
 
 	err = Start(appConfig, verbose)
@@ -86,6 +124,11 @@ func run() error {
 		if err != nil {
 			return fmt.Errorf("sending test message: %w", err)
 		}
+		return nil
+	}
+
+	if checkIP {
+		Logger.Infof("Checking to see if %s is allowed to send email: %t", ipToCheck, AllowedSendersFilter.Allowed(ipToCheck))
 		return nil
 	}
 
@@ -124,6 +167,7 @@ func configDefaults(config *mailRelayConfig) {
 	config.LocalListenIP = DefaultLocalListenIP
 	config.LocalListenPort = DefaultLocalListenPort
 	config.AllowedHosts = []string{"*"}
+	config.AllowedSenders = "*"
 	config.TimeoutSecs = DefaultTimeoutSecs
 }
 
