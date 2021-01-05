@@ -6,6 +6,7 @@ require (
 	github.com/asaskevich/EventBus v0.0.0-20180103000110-68a521d7cbbb // indirect
 	github.com/flashmob/go-guerrilla v1.6.1
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
+	github.com/jpillora/ipfilter v1.2.2
 	github.com/kr/text v0.2.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1
