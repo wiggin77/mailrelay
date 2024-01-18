@@ -1,7 +1,7 @@
 # mailrelay
 
 ![Build Status](https://github.com/wiggin77/mailrelay/actions/workflows/go.yml/badge.svg)
-![Report Card](https://goreportcard.com/badge/github.com/wiggin77/mailrelay)](https://goreportcard.com/report/github.com/wiggin77/mailrelay)
+![Report Card](https://goreportcard.com/badge/github.com/wiggin77/mailrelay)
 
 `mailrelay` is a simple mail relay that can take unauthenticated SMTP emails (e.g. over port 25) and relay them to authenticated, TLS-enabled SMTP servers. Plus it's easy to configure.
 
