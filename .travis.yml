@@ -1,9 +1,0 @@
-language: go
-
-go:
-- 1.13
-
-sudo: false
-before_script:
-  - go vet ./...
-  
