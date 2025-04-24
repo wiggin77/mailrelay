@@ -1,5 +1,5 @@
 // module github.com/wiggin77/mailrelay@v1.04
-module github.com/niclan/mailrelay
+module github.com/niclan/mailrelay@master
 
 go 1.14
 
