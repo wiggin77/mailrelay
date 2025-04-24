@@ -92,11 +92,24 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 }
 
 func handshake(client *smtp.Client, config *relayConfig, tlsConfig *tls.Config) error {
+	if config.HeloHost != "" {
+		if err := client.Hello(config.HeloHost); err != nil {
+			return errors.Wrap(err, "HELO error")
+		}
+	}
+
 	if config.STARTTLS {
 		if err := client.StartTLS(tlsConfig); err != nil {
 			return errors.Wrap(err, "starttls error")
 		}
+		// Re-HELO after STARTTLS
+		if config.HeloHost != "" {
+			if err := client.Hello(config.HeloHost); err != nil {
+				return errors.Wrap(err, "HELO error")
+			}
+		}
 	}
+
 
 	var auth smtp.Auth
 	if config.LoginAuthType {

@@ -64,6 +64,7 @@ type relayConfig struct {
 	Username      string `json:"smtp_username"`
 	Password      string `json:"smtp_password"`
 	SkipVerify    bool   `json:"smtp_skip_cert_verify"`
+	HeloHost      string `json:"smtp_helo"`
 }
 
 // mailRelayProcessor decorator relays emails to another SMTP server.
