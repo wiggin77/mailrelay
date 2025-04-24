@@ -1,5 +1,6 @@
 replace github.com/wiggin77/mailrelay => github.com/niclan/mailrelay
-module github.com/wiggin77/mailrelay
+module github.com/niclan/mailrelay
+# module github.com/wiggin77/mailrelay
 
 
 go 1.14
