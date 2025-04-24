@@ -102,12 +102,6 @@ func handshake(client *smtp.Client, config *relayConfig, tlsConfig *tls.Config) 
 		if err := client.StartTLS(tlsConfig); err != nil {
 			return errors.Wrap(err, "starttls error")
 		}
-		// Re-HELO after STARTTLS
-		if config.HeloHost != "" {
-			if err := client.Hello(config.HeloHost); err != nil {
-				return errors.Wrap(err, "HELO error")
-			}
-		}
 	}
 
 
