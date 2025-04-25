@@ -54,6 +54,14 @@ On local PC (192.168.1.54) create file `/etc/mailrelay.json` with contents:
 }
 ```
 
+Notes on the configuration:
+
+- `smtp_helo` is optional - when given the client will present itself
+  to the upstream with the given name.
+- `smtp_username` is optional - if given the client will attempt to
+  authenticate itself with she server.  You should also give a password
+  in this case.
+
 Run `mailrelay`,
 
 ```Bash
