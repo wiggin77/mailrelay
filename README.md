@@ -46,6 +46,7 @@ On local PC (192.168.1.54) create file `/etc/mailrelay.json` with contents:
     "smtp_password": "secretAppPassword",
     "smtp_max_email_size": 10485760,
     "smtp_login_auth_type": false,
+    "smtp_helo": "smtp.example.com",
     "local_listen_ip": "0.0.0.0",
     "local_listen_port": 2525,
     "allowed_hosts": ["*"],

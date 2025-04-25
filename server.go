@@ -47,6 +47,7 @@ func Start(appConfig *mailRelayConfig, verbose bool) (err error) {
 		"smtp_starttls":         appConfig.SMTPStartTLS,
 		"smtp_login_auth_type":  appConfig.SMTPLoginAuthType,
 		"smtp_skip_cert_verify": appConfig.SkipCertVerify,
+		"smtp_helo":             appConfig.SMTPHelo,
 	}
 	cfg.BackendConfig = bcfg
 
