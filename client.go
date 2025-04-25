@@ -104,8 +104,8 @@ func handshake(client *smtp.Client, config *relayConfig, tlsConfig *tls.Config) 
 		}
 	}
 
-
 	var auth smtp.Auth = nil
+
 	if config.LoginAuthType {
 		auth = LoginAuth(config.Username, config.Password)
 	} else if config.Username != "" {
