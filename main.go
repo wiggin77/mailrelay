@@ -30,6 +30,7 @@ type mailRelayConfig struct {
 	SMTPLoginAuthType bool     `json:"smtp_login_auth_type"`
 	SMTPUsername      string   `json:"smtp_username"`
 	SMTPPassword      string   `json:"smtp_password"`
+	SMTPHelo          string   `json:"smtp_helo"`
 	SkipCertVerify    bool     `json:"smtp_skip_cert_verify"`
 	MaxEmailSize      int64    `json:"smtp_max_email_size"`
 	LocalListenIP     string   `json:"local_listen_ip"`
