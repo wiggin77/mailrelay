@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"net/smtp"
@@ -67,7 +68,7 @@ func run() error {
 	flag.StringVar(&testsender, "sender", "", "used with 'test' to specify sender email address")
 	flag.StringVar(&testrcpt, "rcpt", "", "used with 'test' to specify recipient email address")
 	flag.BoolVar(&verbose, "verbose", false, "verbose output")
-	flag.BoolVar(&checkIP, "checkIP", false, "Checks a provided IP address to see if it would be allowed")
+	flag.BoolVar(&checkIP, "checkIP", false, "checks a provided IP address to see if it would be allowed")
 	flag.StringVar(&ipToCheck, "ip", "", "used with 'checkIP' to specify IP address to test")
 	flag.Parse()
 
@@ -129,7 +130,14 @@ func run() error {
 	}
 
 	if checkIP {
-		Logger.Infof("Checking to see if %s is allowed to send email: %t", ipToCheck, AllowedSendersFilter.Allowed(ipToCheck))
+		if ipToCheck == "" {
+			return errors.New("IP address to check is required when `checkIP` flag is used. Provide an IP address using the `-ip` flag")
+		}
+		result := ""
+		if !AllowedSendersFilter.Blocked(ipToCheck) {
+			result = "NOT "
+		}
+		fmt.Printf("IP address %s is %sallowed to send email\n", ipToCheck, result)
 		return nil
 	}
 
