@@ -10,7 +10,7 @@ import (
 	"net/textproto"
 	"strconv"
 
-	"github.com/flashmob/go-guerrilla/mail"
+	"github.com/phires/go-guerrilla/mail"
 	"github.com/pkg/errors"
 )
 
@@ -41,6 +41,9 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 	}
 
 	tlsconfig := &tls.Config{
+		// InsecureSkipVerify is configurable to support legacy SMTP servers with
+		// self-signed certificates or hostname mismatches. This should only be
+		// enabled in trusted network environments.
 		InsecureSkipVerify: config.SkipVerify, //nolint:gosec
 		ServerName:         config.Server,
 	}

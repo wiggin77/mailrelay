@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
-	guerrilla "github.com/flashmob/go-guerrilla"
-	"github.com/flashmob/go-guerrilla/backends"
-	"github.com/flashmob/go-guerrilla/log"
-	"github.com/flashmob/go-guerrilla/mail"
+	guerrilla "github.com/phires/go-guerrilla"
+	"github.com/phires/go-guerrilla/backends"
+	"github.com/phires/go-guerrilla/log"
+	"github.com/phires/go-guerrilla/mail"
 )
 
 const (
@@ -39,7 +39,6 @@ func Start(appConfig *mailRelayConfig, verbose bool) (err error) {
 		"save_workers_size":     saveWorkersSize,
 		"save_process":          "HeadersParser|Header|Hasher|Debugger|MailRelay",
 		"log_received_mails":    true,
-		"primary_mail_host":     "homeoffice.com",
 		"smtp_username":         appConfig.SMTPUsername,
 		"smtp_password":         appConfig.SMTPPassword,
 		"smtp_server":           appConfig.SMTPServer,

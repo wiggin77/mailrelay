@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flashmob/go-guerrilla/log"
-	"github.com/flashmob/go-guerrilla/mail"
 	"github.com/jpillora/ipfilter"
+	"github.com/phires/go-guerrilla/log"
+	"github.com/phires/go-guerrilla/mail"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -260,9 +260,9 @@ func TestSendMail_IPFiltering_Allowed(t *testing.T) {
 func TestSendMail_ServerErrors(t *testing.T) {
 	setupTestLogger(t)
 	tests := []struct {
-		name         string
-		failCommand  string
-		expectError  string
+		name        string
+		failCommand string
+		expectError string
 	}{
 		{
 			name:        "MAIL command fails",

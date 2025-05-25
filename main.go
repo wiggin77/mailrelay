@@ -11,12 +11,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	log "github.com/flashmob/go-guerrilla/log"
 	"github.com/jpillora/ipfilter"
+	log "github.com/phires/go-guerrilla/log"
 )
 
 const (
-	DefaultSTMPPort        = 465
+	DefaultSMTPPort        = 465
 	DefaultMaxEmailSize    = (10 << 23) // 83 MB
 	DefaultLocalListenIP   = "0.0.0.0"
 	DefaultLocalListenPort = 2525
@@ -95,21 +95,11 @@ func run() error {
 
 		file.Close()
 
-		for _, eachline := range allowedIPsAndRanges {
-			fmt.Println(eachline)
-		}
-
 		AllowedSendersFilter = ipfilter.New(ipfilter.Options{
 			//AllowedIPs:     []string{"192.168.0.0/24"},
 			AllowedIPs:     allowedIPsAndRanges,
 			BlockByDefault: true,
 		})
-	}
-
-	err = Start(appConfig, verbose)
-	if err != nil {
-		flag.Usage()
-		return fmt.Errorf("starting server: %w", err)
 	}
 
 	logLevel := "info"
@@ -119,6 +109,12 @@ func run() error {
 	Logger, err = log.GetLogger("stdout", logLevel)
 	if err != nil {
 		return fmt.Errorf("creating logger: %w", err)
+	}
+
+	err = Start(appConfig, verbose)
+	if err != nil {
+		flag.Usage()
+		return fmt.Errorf("starting server: %w", err)
 	}
 
 	if test {
@@ -164,11 +160,16 @@ func loadConfig(path string) (*mailRelayConfig, error) {
 	if err := parser.Decode(&cfg); err != nil {
 		return nil, err
 	}
+
+	if err := validateConfig(&cfg); err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
 	return &cfg, nil
 }
 
 func configDefaults(config *mailRelayConfig) {
-	config.SMTPPort = DefaultSTMPPort
+	config.SMTPPort = DefaultSMTPPort
 	config.SMTPStartTLS = false
 	config.SMTPLoginAuthType = false
 	config.MaxEmailSize = DefaultMaxEmailSize
@@ -178,6 +179,31 @@ func configDefaults(config *mailRelayConfig) {
 	config.AllowedHosts = []string{"*"}
 	config.AllowedSenders = "*"
 	config.TimeoutSecs = DefaultTimeoutSecs
+}
+
+// validateConfig validates the configuration values
+func validateConfig(config *mailRelayConfig) error {
+	if config.SMTPServer == "" {
+		return errors.New("smtp_server is required")
+	}
+
+	if config.SMTPPort < 1 || config.SMTPPort > 65535 {
+		return errors.New("smtp_port must be between 1 and 65535")
+	}
+
+	if config.LocalListenPort < 1 || config.LocalListenPort > 65535 {
+		return errors.New("local_listen_port must be between 1 and 65535")
+	}
+
+	if config.MaxEmailSize < 1024 {
+		return errors.New("smtp_max_email_size must be at least 1024 bytes")
+	}
+
+	if config.TimeoutSecs < 1 || config.TimeoutSecs > 3600 {
+		return errors.New("timeout_secs must be between 1 and 3600 seconds")
+	}
+
+	return nil
 }
 
 // sendTest sends a test message to the SMTP server specified in mailrelay.json

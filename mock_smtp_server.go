@@ -18,24 +18,24 @@ import (
 
 // MockSMTPServer represents a mock SMTP server for testing
 type MockSMTPServer struct {
-	listener   net.Listener
-	tlsConfig  *tls.Config
-	address    string
-	port       int
-	running    bool
-	mu         sync.Mutex
-	
+	listener  net.Listener
+	tlsConfig *tls.Config
+	address   string
+	port      int
+	running   bool
+	mu        sync.Mutex
+
 	// Recorded interactions
 	Connections []MockConnection
-	
+
 	// Configuration
-	RequireAuth       bool
-	RequireSTARTTLS   bool
-	SupportLoginAuth  bool
-	ResponseDelay     time.Duration
-	FailCommands      map[string]bool // Commands to fail
-	CustomResponses   map[string]string
-	ImplicitTLS       bool // True if server uses implicit TLS (like port 465)
+	RequireAuth      bool
+	RequireSTARTTLS  bool
+	SupportLoginAuth bool
+	ResponseDelay    time.Duration
+	FailCommands     map[string]bool // Commands to fail
+	CustomResponses  map[string]string
+	ImplicitTLS      bool // True if server uses implicit TLS (like port 465)
 }
 
 type MockConnection struct {
@@ -84,7 +84,7 @@ func (s *MockSMTPServer) Start() error {
 	s.running = true
 
 	go s.acceptConnections()
-	
+
 	// Give the server a moment to start
 	time.Sleep(10 * time.Millisecond)
 	return nil
@@ -108,7 +108,7 @@ func (s *MockSMTPServer) StartTLS() error {
 	s.ImplicitTLS = true
 
 	go s.acceptConnections()
-	
+
 	// Give the server a moment to start
 	time.Sleep(10 * time.Millisecond)
 	return nil
@@ -139,7 +139,7 @@ func (s *MockSMTPServer) Port() int {
 func (s *MockSMTPServer) GetLastConnection() *MockConnection {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Connections) == 0 {
 		return nil
 	}
@@ -150,7 +150,7 @@ func (s *MockSMTPServer) GetLastConnection() *MockConnection {
 func (s *MockSMTPServer) Reset() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	s.Connections = make([]MockConnection, 0)
 }
 
@@ -163,21 +163,21 @@ func (s *MockSMTPServer) acceptConnections() {
 			}
 			continue
 		}
-		
+
 		go s.handleConnection(conn)
 	}
 }
 
 func (s *MockSMTPServer) handleConnection(conn net.Conn) {
 	defer conn.Close()
-	
+
 	if s.ResponseDelay > 0 {
 		time.Sleep(s.ResponseDelay)
 	}
 
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
-	
+
 	mockConn := MockConnection{
 		Commands: make([]string, 0),
 		To:       make([]string, 0),
@@ -200,21 +200,21 @@ func (s *MockSMTPServer) handleConnection(conn net.Conn) {
 
 		line = strings.TrimSpace(line)
 		mockConn.Commands = append(mockConn.Commands, line)
-		
+
 		parts := strings.Fields(line)
 		if len(parts) == 0 {
 			continue
 		}
-		
+
 		cmd := strings.ToUpper(parts[0])
-		
+
 		// Check if we should fail this command
 		if s.FailCommands[cmd] {
 			writer.WriteString("550 Command failed\r\n")
 			writer.Flush()
 			continue
 		}
-		
+
 		// Check for custom responses
 		if response, exists := s.CustomResponses[cmd]; exists {
 			writer.WriteString(response + "\r\n")
@@ -253,7 +253,7 @@ func (s *MockSMTPServer) handleConnection(conn net.Conn) {
 			writer.Flush()
 		}
 	}
-	
+
 	s.mu.Lock()
 	s.Connections = append(s.Connections, mockConn)
 	s.mu.Unlock()
@@ -278,23 +278,22 @@ func (s *MockSMTPServer) handleEHLO(writer *bufio.Writer) {
 func (s *MockSMTPServer) handleSTARTTLS(conn net.Conn, reader *bufio.Reader, writer *bufio.Writer, mockConn *MockConnection) (*tls.Conn, *bufio.Reader, *bufio.Writer, bool) {
 	writer.WriteString("220 Ready to start TLS\r\n")
 	writer.Flush()
-	
+
 	// Upgrade the connection to TLS
 	tlsConn := tls.Server(conn, s.tlsConfig)
 	if err := tlsConn.Handshake(); err != nil {
 		// TLS handshake failed, return original connection
 		return nil, reader, writer, false
 	}
-	
+
 	mockConn.UsedTLS = true
-	
+
 	// Return new TLS connection and readers/writers
 	newReader := bufio.NewReader(tlsConn)
 	newWriter := bufio.NewWriter(tlsConn)
-	
+
 	return tlsConn, newReader, newWriter, true
 }
-
 
 func (s *MockSMTPServer) handleAUTH(parts []string, reader *bufio.Reader, writer *bufio.Writer, mockConn *MockConnection) {
 	if len(parts) < 2 {
@@ -304,7 +303,7 @@ func (s *MockSMTPServer) handleAUTH(parts []string, reader *bufio.Reader, writer
 	}
 
 	authType := strings.ToUpper(parts[1])
-	
+
 	switch authType {
 	case "PLAIN":
 		// PLAIN auth can be sent in initial command or as a response to challenge
@@ -313,40 +312,40 @@ func (s *MockSMTPServer) handleAUTH(parts []string, reader *bufio.Reader, writer
 			// authData := parts[2] // In a real implementation, we'd decode base64 and parse username/password
 			mockConn.AuthUser = "testuser"
 			mockConn.AuthPass = "testpass"
-			
+
 			writer.WriteString("235 Authentication successful\r\n")
 			writer.Flush()
 		} else {
 			// Challenge/response mode
 			writer.WriteString("334 \r\n")
 			writer.Flush()
-			
+
 			authData, _ := reader.ReadString('\n')
 			authData = strings.TrimSpace(authData)
 			// In a real implementation, we'd decode base64 and parse username/password
 			mockConn.AuthUser = "testuser"
 			mockConn.AuthPass = "testpass"
-			
+
 			writer.WriteString("235 Authentication successful\r\n")
 			writer.Flush()
 		}
-		
+
 	case "LOGIN":
 		writer.WriteString("334 VXNlcm5hbWU6\r\n") // "Username:" in base64
 		writer.Flush()
-		
+
 		username, _ := reader.ReadString('\n')
 		mockConn.AuthUser = strings.TrimSpace(username)
-		
+
 		writer.WriteString("334 UGFzc3dvcmQ6\r\n") // "Password:" in base64
 		writer.Flush()
-		
+
 		password, _ := reader.ReadString('\n')
 		mockConn.AuthPass = strings.TrimSpace(password)
-		
+
 		writer.WriteString("235 Authentication successful\r\n")
 		writer.Flush()
-		
+
 	default:
 		writer.WriteString("504 Authentication mechanism not supported\r\n")
 		writer.Flush()
@@ -359,11 +358,11 @@ func (s *MockSMTPServer) handleMAIL(parts []string, writer *bufio.Writer, mockCo
 		writer.Flush()
 		return
 	}
-	
+
 	fromAddr := strings.TrimPrefix(parts[1], "FROM:")
 	fromAddr = strings.Trim(fromAddr, "<>")
 	mockConn.From = fromAddr
-	
+
 	writer.WriteString("250 OK\r\n")
 	writer.Flush()
 }
@@ -374,11 +373,11 @@ func (s *MockSMTPServer) handleRCPT(parts []string, writer *bufio.Writer, mockCo
 		writer.Flush()
 		return
 	}
-	
+
 	toAddr := strings.TrimPrefix(parts[1], "TO:")
 	toAddr = strings.Trim(toAddr, "<>")
 	mockConn.To = append(mockConn.To, toAddr)
-	
+
 	writer.WriteString("250 OK\r\n")
 	writer.Flush()
 }
@@ -386,23 +385,23 @@ func (s *MockSMTPServer) handleRCPT(parts []string, writer *bufio.Writer, mockCo
 func (s *MockSMTPServer) handleDATA(reader *bufio.Reader, writer *bufio.Writer, mockConn *MockConnection) {
 	writer.WriteString("354 Start mail input; end with <CRLF>.<CRLF>\r\n")
 	writer.Flush()
-	
+
 	var dataBuilder strings.Builder
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			break
 		}
-		
+
 		if strings.TrimSpace(line) == "." {
 			break
 		}
-		
+
 		dataBuilder.WriteString(line)
 	}
-	
+
 	mockConn.Data = dataBuilder.String()
-	
+
 	writer.WriteString("250 OK: message accepted\r\n")
 	writer.Flush()
 }
@@ -426,12 +425,12 @@ func generateTestCert() (tls.Certificate, error) {
 			StreetAddress: []string{""},
 			PostalCode:    []string{""},
 		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
-		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
-		DNSNames:     []string{"localhost"},
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		DNSNames:    []string{"localhost"},
 	}
 
 	// Generate the certificate
