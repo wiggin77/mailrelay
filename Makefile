@@ -25,6 +25,11 @@ build:
 test:
 	go test ./...
 
+# Run tests with race condition detection
+.PHONY: test-race
+test-race:
+	go test -race ./...
+
 # Build for all supported architectures
 .PHONY: buildall
 buildall: clean
@@ -63,6 +68,14 @@ test-config: build
 check-ip: build
 	./$(BINARY_NAME) -config=./mailrelay.json -checkIP -ip=$(IP)
 
+# Install golangci-lint and run code style checks
+.PHONY: check-style
+check-style:
+	@echo "Installing golangci-lint v1.63.4..."
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.63.4
+	@echo "Running golangci-lint..."
+	golangci-lint run
+
 # Show help
 .PHONY: help
 help:
@@ -70,6 +83,8 @@ help:
 	@echo "  build      - Build for current architecture"
 	@echo "  buildall   - Build for all supported architectures"
 	@echo "  test       - Run tests"
+	@echo "  test-race  - Run tests with race condition detection"
+	@echo "  check-style - Install golangci-lint and run code style checks"
 	@echo "  clean      - Remove build artifacts"
 	@echo "  run        - Build and run the application"
 	@echo "  test-config - Test configuration with sample email"
