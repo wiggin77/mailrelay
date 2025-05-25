@@ -44,7 +44,7 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 		// InsecureSkipVerify is configurable to support legacy SMTP servers with
 		// self-signed certificates or hostname mismatches. This should only be
 		// enabled in trusted network environments.
-		InsecureSkipVerify: config.SkipVerify, //nolint:gosec
+		InsecureSkipVerify: config.SkipVerify,
 		ServerName:         config.Server,
 	}
 
@@ -59,13 +59,13 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 	}
 
 	if client, err = smtp.NewClient(conn, config.Server); err != nil {
-		close(conn, "conn")
+		closeConn(conn, "conn")
 		return errors.Wrap(err, "newclient error")
 	}
 	shouldCloseClient := true
 	defer func(shouldClose *bool) {
 		if *shouldClose {
-			close(client, "client")
+			closeConn(client, "client")
 		}
 	}(&shouldCloseClient)
 
@@ -87,7 +87,7 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 		return errors.Wrap(err, "data error")
 	}
 	_, err = writer.Write(msg.Bytes())
-	close(writer, "writer")
+	closeConn(writer, "writer")
 	if err != nil {
 		return errors.Wrap(err, "write error")
 	}
@@ -115,7 +115,7 @@ func handshake(client *smtp.Client, config *relayConfig, tlsConfig *tls.Config) 
 		}
 	}
 
-	var auth smtp.Auth = nil
+	var auth smtp.Auth
 
 	if config.LoginAuthType {
 		auth = LoginAuth(config.Username, config.Password)
@@ -131,7 +131,7 @@ func handshake(client *smtp.Client, config *relayConfig, tlsConfig *tls.Config) 
 	return nil
 }
 
-func close(c closeable, what string) {
+func closeConn(c closeable, what string) {
 	err := c.Close()
 	if err != nil {
 		fmt.Printf("Error closing %s: %v\n", what, err)
@@ -142,7 +142,8 @@ func isQuitError(err error) bool {
 	if err == nil {
 		return false
 	}
-	e, ok := err.(*textproto.Error)
+	var e *textproto.Error
+	ok := errors.As(err, &e)
 	if ok {
 		// SMTP codes 221 or 250 are acceptable here
 		if e.Code == 221 || e.Code == 250 {
@@ -154,7 +155,7 @@ func isQuitError(err error) bool {
 
 // getTo returns the array of email addresses in the envelope.
 func getTo(e *mail.Envelope) []string {
-	var ret []string
+	ret := make([]string, 0, len(e.RcptTo))
 	for i := range e.RcptTo {
 		ret = append(ret, e.RcptTo[i].String())
 	}

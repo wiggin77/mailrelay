@@ -17,16 +17,17 @@ import (
 
 const (
 	DefaultSMTPPort        = 465
-	DefaultMaxEmailSize    = (10 << 23) // 83 MB
+	DefaultMaxEmailSize    = 83886080 // 80 MB (80 * 1024 * 1024)
 	DefaultLocalListenIP   = "0.0.0.0"
 	DefaultLocalListenPort = 2525
 	DefaultTimeoutSecs     = 300 // 5 minutes
+	MinEmailSizeBytes      = 1024
 )
 
-// Logger is the global logger
+// Logger is the global logger.
 var Logger log.Logger
 
-// Global List of Allowed Sender IPs:
+// AllowedSendersFilter holds the global list of allowed sender IPs.
 var AllowedSendersFilter = ipfilter.New(ipfilter.Options{})
 
 type mailRelayConfig struct {
@@ -56,6 +57,39 @@ func main() {
 }
 
 func run() error {
+	configFile, test, testsender, testrcpt, checkIP, ipToCheck, verbose := parseFlags()
+
+	appConfig, err := loadConfig(configFile)
+	if err != nil {
+		flag.Usage()
+		return fmt.Errorf("loading config: %w", err)
+	}
+
+	if err := setupIPFilter(appConfig); err != nil {
+		return err
+	}
+
+	if err := setupLogger(verbose); err != nil {
+		return err
+	}
+
+	if err := Start(appConfig, verbose); err != nil {
+		flag.Usage()
+		return fmt.Errorf("starting server: %w", err)
+	}
+
+	if test {
+		return runTest(testsender, testrcpt, appConfig.LocalListenPort)
+	}
+
+	if checkIP {
+		return runIPCheck(ipToCheck)
+	}
+
+	return waitForSignal()
+}
+
+func parseFlags() (string, bool, string, string, bool, string, bool) {
 	var configFile string
 	var test bool
 	var testsender string
@@ -63,6 +97,7 @@ func run() error {
 	var checkIP bool
 	var ipToCheck string
 	var verbose bool
+
 	flag.StringVar(&configFile, "config", "/etc/mailrelay.json", "specifies JSON config file")
 	flag.BoolVar(&test, "test", false, "sends a test message to SMTP server")
 	flag.StringVar(&testsender, "sender", "", "used with 'test' to specify sender email address")
@@ -72,76 +107,75 @@ func run() error {
 	flag.StringVar(&ipToCheck, "ip", "", "used with 'checkIP' to specify IP address to test")
 	flag.Parse()
 
-	appConfig, err := loadConfig(configFile)
+	return configFile, test, testsender, testrcpt, checkIP, ipToCheck, verbose
+}
+
+func setupIPFilter(appConfig *mailRelayConfig) error {
+	if appConfig.AllowedSenders == "*" {
+		return nil
+	}
+
+	file, err := os.Open(appConfig.AllowedSenders)
 	if err != nil {
-		flag.Usage()
-		return fmt.Errorf("loading config: %w", err)
+		return fmt.Errorf("failed opening file: %w", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	var allowedIPsAndRanges []string
+
+	for scanner.Scan() {
+		allowedIPsAndRanges = append(allowedIPsAndRanges, scanner.Text())
 	}
 
-	if appConfig.AllowedSenders != "*" {
-		file, err := os.Open(appConfig.AllowedSenders)
+	AllowedSendersFilter = ipfilter.New(ipfilter.Options{
+		AllowedIPs:     allowedIPsAndRanges,
+		BlockByDefault: true,
+	})
 
-		if err != nil {
-			return fmt.Errorf("failed opening file: %s", err)
-		}
+	return nil
+}
 
-		scanner := bufio.NewScanner(file)
-		scanner.Split(bufio.ScanLines)
-		var allowedIPsAndRanges []string
-
-		for scanner.Scan() {
-			allowedIPsAndRanges = append(allowedIPsAndRanges, scanner.Text())
-		}
-
-		file.Close()
-
-		AllowedSendersFilter = ipfilter.New(ipfilter.Options{
-			//AllowedIPs:     []string{"192.168.0.0/24"},
-			AllowedIPs:     allowedIPsAndRanges,
-			BlockByDefault: true,
-		})
-	}
-
+func setupLogger(verbose bool) error {
 	logLevel := "info"
 	if verbose {
 		logLevel = "debug"
 	}
+
+	var err error
 	Logger, err = log.GetLogger("stdout", logLevel)
 	if err != nil {
 		return fmt.Errorf("creating logger: %w", err)
 	}
+	return nil
+}
 
-	err = Start(appConfig, verbose)
+func runTest(testsender, testrcpt string, port int) error {
+	err := sendTest(testsender, testrcpt, port)
 	if err != nil {
-		flag.Usage()
-		return fmt.Errorf("starting server: %w", err)
+		return fmt.Errorf("sending test message: %w", err)
+	}
+	return nil
+}
+
+func runIPCheck(ipToCheck string) error {
+	if ipToCheck == "" {
+		return errors.New("IP address to check is required when `checkIP` flag is used. " +
+			"Provide an IP address using the `-ip` flag")
 	}
 
-	if test {
-		err = sendTest(testsender, testrcpt, appConfig.LocalListenPort)
-		if err != nil {
-			return fmt.Errorf("sending test message: %w", err)
-		}
-		return nil
+	result := ""
+	if !AllowedSendersFilter.Blocked(ipToCheck) {
+		result = "NOT "
 	}
+	fmt.Printf("IP address %s is %sallowed to send email\n", ipToCheck, result)
+	return nil
+}
 
-	if checkIP {
-		if ipToCheck == "" {
-			return errors.New("IP address to check is required when `checkIP` flag is used. Provide an IP address using the `-ip` flag")
-		}
-		result := ""
-		if !AllowedSendersFilter.Blocked(ipToCheck) {
-			result = "NOT "
-		}
-		fmt.Printf("IP address %s is %sallowed to send email\n", ipToCheck, result)
-		return nil
-	}
-
-	// Wait for SIGINT
+func waitForSignal() error {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
-	// Block until a signal is received.
 	<-c
 	return nil
 }
@@ -181,7 +215,7 @@ func configDefaults(config *mailRelayConfig) {
 	config.TimeoutSecs = DefaultTimeoutSecs
 }
 
-// validateConfig validates the configuration values
+// validateConfig validates the configuration values.
 func validateConfig(config *mailRelayConfig) error {
 	if config.SMTPServer == "" {
 		return errors.New("smtp_server is required")
@@ -195,7 +229,7 @@ func validateConfig(config *mailRelayConfig) error {
 		return errors.New("local_listen_port must be between 1 and 65535")
 	}
 
-	if config.MaxEmailSize < 1024 {
+	if config.MaxEmailSize < MinEmailSizeBytes {
 		return errors.New("smtp_max_email_size must be at least 1024 bytes")
 	}
 
@@ -206,7 +240,7 @@ func validateConfig(config *mailRelayConfig) error {
 	return nil
 }
 
-// sendTest sends a test message to the SMTP server specified in mailrelay.json
+// sendTest sends a test message to the SMTP server specified in mailrelay.json.
 func sendTest(sender string, rcpt string, port int) error {
 	conn, err := smtp.Dial(fmt.Sprintf("localhost:%d", port))
 	if err != nil {

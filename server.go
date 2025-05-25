@@ -76,7 +76,11 @@ var mailRelayProcessor = func() backends.Decorator {
 		if err != nil {
 			return err
 		}
-		config = bcfg.(*relayConfig)
+		var ok bool
+		config, ok = bcfg.(*relayConfig)
+		if !ok {
+			return fmt.Errorf("failed to cast config to relayConfig")
+		}
 		return nil
 	})
 	backends.Svc.AddInitializer(initFunc)

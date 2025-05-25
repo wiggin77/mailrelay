@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// setupTestLogger initializes the logger for testing
+// setupTestLogger initializes the logger for testing.
 func setupTestLogger(t *testing.T) {
 	var err error
 	Logger, err = log.GetLogger("stdout", "info")

@@ -1,73 +1,224 @@
+# golangci-lint configuration for mailrelay project
+# See https://golangci-lint.run/usage/configuration/ for configuration options
+
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+  modules-download-mode: readonly
+
+output:
+  formats:
+    - format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  sort-results: true
+
 linters-settings:
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - performance
-      - style
-    disabled-checks:
-      - dupImport # https://github.com/go-critic/go-critic/issues/845
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-      - wrapperFunc
-  govet:
-    check-shadowing: true
+  # Cyclomatic complexity
+  cyclop:
+    max-complexity: 15
+    package-average: 10.0
+    skip-tests: false
+
+  # Duplicate code detection
+  dupl:
+    threshold: 100
+
+  # Function length
+  funlen:
+    lines: 80
+    statements: 50
+
+  # Cognitive complexity
+  gocognit:
+    min-complexity: 20
+
+  # Cyclomatic complexity (alternative to cyclop)
+  gocyclo:
+    min-complexity: 15
+
+  # Line length
+  lll:
+    line-length: 120
+
+  # Naming conventions
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+        disabled: false
+      - name: unexported-return
+        severity: warning
+        disabled: false
+      - name: time-naming
+        severity: warning
+        disabled: false
+      - name: var-declaration
+        severity: warning
+        disabled: false
+      - name: package-comments
+        severity: warning
+        disabled: false
+
+  # Security checks
+  gosec:
+    excludes:
+      - G402 # TLS InsecureSkipVerify set true (we have it configurable with comments)
+    config:
+      G306: "0644"
+
+  # Unused parameters
+  unparam:
+    check-exported: false
+
+  # Unused variables
+  unused:
+    check-exported: false
+
+  # Error handling
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  # Go format
+  gofmt:
+    simplify: true
+
+  # Import organization
+  goimports:
+    local-prefixes: github.com/wiggin77/mailrelay
+
+  # Misspelling
   misspell:
     locale: US
 
 linters:
-  # please, do not use `enable-all`: it's deprecated and will be removed soon.
-  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
-  disable-all: true
   enable:
-    - bodyclose
-    - deadcode
-    - depguard
-    - dogsled
-    - dupl
+    # Default linters
     - errcheck
-#    - funlen
-    - gochecknoinits
-    - goconst
-#    - gocritic
-    - gocyclo
-    - gofmt
-    - goimports
-    - golint
-    - gomnd
-    - goprintffuncname
-    - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
-    - lll
-    - misspell
-    - nakedret
-#    - nolintlint
-    - rowserrcheck
-    - scopelint
     - staticcheck
-    - structcheck
-    - stylecheck
     - typecheck
-    - unconvert
-    - unparam
     - unused
-    - varcheck
-    - whitespace
 
-  # don't enable:
-  # - asciicheck
-  # - gochecknoglobals
-  # - gocognit
-  # - godot
-  # - godox
-  # - goerr113
-  # - maligned
-  # - nestif
-  # - prealloc
-  # - testpackage
-  # - wsl
+    # Additional recommended linters
+    - asciicheck      # Check for non-ASCII characters
+    - bodyclose       # Check HTTP response body is closed
+    - cyclop          # Cyclomatic complexity
+    - dupl            # Duplicate code detection
+    - durationcheck   # Duration checks
+    - errname         # Error naming conventions
+    - errorlint       # Error wrapping
+    - exhaustive      # Exhaustiveness checks
+    - copyloopvar     # Loop variable capturing (exportloopref renamed)
+    - funlen          # Function length
+    - gochecknoinits  # No init functions
+    - gocognit        # Cognitive complexity
+    - goconst         # Repeated strings that could be constants
+    - gocritic        # Go source code linter
+    - gocyclo         # Cyclomatic complexity
+    - gofmt           # Gofmt checks
+    - goimports       # Import formatting
+    - mnd             # Magic numbers (gomnd renamed)
+    - gomoddirectives # Go.mod directives
+    - gomodguard      # Go.mod guard
+    - goprintffuncname # Printf function naming
+    - gosec           # Security checks
+    - lll             # Line length
+    - makezero        # Slice initialization
+    - misspell        # Misspellings
+    - nilerr          # Nil error checks
+    - nilnil          # Nil nil checks
+    - noctx           # HTTP request without context
+    - nolintlint      # Nolint directive checks
+    - predeclared     # Predeclared identifier checks
+    - revive          # Golint replacement
+    - rowserrcheck    # SQL rows error check
+    - sqlclosecheck   # SQL close check
+    - tparallel       # Test parallelism
+    - unparam         # Unused parameters
+    - wastedassign    # Wasted assignments
+    - whitespace      # Whitespace checks
 
+  disable:
+    - forbidigo       # Not needed for this project
+    - gci             # Import organization (we use goimports)
+    - godox           # TODO comments are OK
+    - err113          # Too strict for this project (goerr113 renamed)
+    - wrapcheck       # Too strict for this project
+    - godot           # Comment periods are pedantic
+    - gofumpt         # Standard gofmt is sufficient
+    - nestif          # Sometimes deep nesting is clearest
+    - nakedret        # Naked returns OK in short functions
+    - prealloc        # Micro-optimizations not always worth it
+    - unconvert       # Type conversions can aid clarity
+
+issues:
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  uniq-by-line: true
+  exclude-rules:
+    # Exclude many linters from running on test files
+    - path: _test\.go
+      linters:
+        - mnd             # Magic numbers are common in tests
+        - goconst         # String constants less important in tests
+        - funlen          # Test functions can be longer
+        - dupl            # Duplicate code acceptable in tests
+        - gocognit        # Cognitive complexity relaxed for tests
+        - gocyclo         # Cyclomatic complexity relaxed for tests
+        - cyclop          # Cyclomatic complexity relaxed for tests
+        - errcheck        # Error checking can be relaxed in tests
+        - gosec           # Security checks relaxed for test code
+        - lll             # Line length can be longer in tests
+        - revive          # General style checks relaxed
+        - ineffassign     # Ineffectual assignments OK in mock code
+        - unparam         # Unused parameters OK in test helpers
+
+    # Exclude linters specifically for mock SMTP server
+    - path: mock_smtp_server\.go
+      linters:
+        - mnd             # Magic numbers acceptable in mock server
+        - goconst         # String constants less important in mock code
+        - funlen          # Mock functions can be longer
+        - gocognit        # Cognitive complexity relaxed for mock server
+        - gocyclo         # Cyclomatic complexity relaxed for mock server
+        - cyclop          # Cyclomatic complexity relaxed for mock server
+        - errcheck        # Error checking relaxed in mock server
+        - gosec           # Security checks not needed in mock code
+        - lll             # Line length relaxed for mock server
+        - ineffassign     # Ineffectual assignments OK in mock code
+
+    # Exclude known linter issues or false positives
+    - text: "weak cryptographic primitive"
+      linters:
+        - gosec
+
+    # Allow long lines in generated files
+    - path: ".*\\.pb\\.go"
+      linters:
+        - lll
+
+    # Allow complexity in main function (CLI parsing)
+    - path: main\.go
+      text: "cognitive complexity"
+      linters:
+        - gocognit
+
+  # Show only new issues from the last revision
+  new: false
+
+  # Fix issues automatically where possible
+  fix: false
+
+  # Maximum issues count per one linter
+  max-issues-per-linter: 0
+
+  # Maximum count of issues with the same text
+  max-same-issues: 0
+
+severity:
+  default-severity: error
+  case-sensitive: false
