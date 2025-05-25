@@ -25,6 +25,11 @@ build:
 test:
 	go test ./...
 
+# Run tests with race condition detection
+.PHONY: test-race
+test-race:
+	go test -race ./...
+
 # Build for all supported architectures
 .PHONY: buildall
 buildall: clean
@@ -78,6 +83,7 @@ help:
 	@echo "  build      - Build for current architecture"
 	@echo "  buildall   - Build for all supported architectures"
 	@echo "  test       - Run tests"
+	@echo "  test-race  - Run tests with race condition detection"
 	@echo "  check-style - Install golangci-lint and run code style checks"
 	@echo "  clean      - Remove build artifacts"
 	@echo "  run        - Build and run the application"

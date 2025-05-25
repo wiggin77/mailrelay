@@ -165,10 +165,10 @@ func (s *MockSMTPServer) Reset() {
 }
 
 func (s *MockSMTPServer) acceptConnections() {
-	for s.running {
+	for s.isRunning() {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			if s.running {
+			if s.isRunning() {
 				fmt.Printf("Accept error: %v\n", err)
 			}
 			continue
@@ -176,6 +176,12 @@ func (s *MockSMTPServer) acceptConnections() {
 
 		go s.handleConnection(conn)
 	}
+}
+
+func (s *MockSMTPServer) isRunning() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.running
 }
 
 func (s *MockSMTPServer) handleConnection(conn net.Conn) {
