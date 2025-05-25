@@ -11,7 +11,7 @@ func TestConfigDefaults(t *testing.T) {
 	var cfg mailRelayConfig
 	configDefaults(&cfg)
 
-	assert.Equal(t, DefaultSTMPPort, cfg.SMTPPort)
+	assert.Equal(t, DefaultSMTPPort, cfg.SMTPPort)
 	assert.Equal(t, false, cfg.SMTPStartTLS)
 	assert.Equal(t, false, cfg.SMTPLoginAuthType)
 	assert.Equal(t, int64(DefaultMaxEmailSize), cfg.MaxEmailSize)
@@ -56,7 +56,7 @@ func TestLoadConfig(t *testing.T) {
 				assert.Equal(t, "user@minimal.com", cfg.SMTPUsername)
 				assert.Equal(t, "password", cfg.SMTPPassword)
 				// Check that defaults are applied
-				assert.Equal(t, DefaultSTMPPort, cfg.SMTPPort)
+				assert.Equal(t, DefaultSMTPPort, cfg.SMTPPort)
 				assert.Equal(t, DefaultLocalListenIP, cfg.LocalListenIP)
 				assert.Equal(t, DefaultLocalListenPort, cfg.LocalListenPort)
 				assert.Equal(t, []string{"*"}, cfg.AllowedHosts)

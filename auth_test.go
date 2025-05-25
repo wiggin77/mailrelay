@@ -38,11 +38,11 @@ func TestLoginAuthNext(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		serverMsg  string
-		more       bool
-		expected   string
-		expectErr  bool
+		name      string
+		serverMsg string
+		more      bool
+		expected  string
+		expectErr bool
 	}{
 		{
 			name:      "username prompt - User Name",

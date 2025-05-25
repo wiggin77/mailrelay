@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/flashmob/go-guerrilla/mail"
 	"github.com/jpillora/ipfilter"
+	"github.com/phires/go-guerrilla/mail"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -233,11 +233,11 @@ func TestSendMail_TLSSkipVerify(t *testing.T) {
 
 			// Send email
 			err := sendMail(envelope, config)
-			
+
 			if tt.skipVerify {
 				// Should succeed when skipping verification
 				assert.NoError(t, err)
-				
+
 				// Verify email was sent
 				conn := server.GetLastConnection()
 				require.NotNil(t, conn)

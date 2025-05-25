@@ -4,7 +4,7 @@ import (
 	"net/textproto"
 	"testing"
 
-	"github.com/flashmob/go-guerrilla/mail"
+	"github.com/phires/go-guerrilla/mail"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +34,7 @@ func TestGetTo(t *testing.T) {
 			},
 			expected: []string{
 				"user1@example.com",
-				"user2@test.com", 
+				"user2@test.com",
 				"admin@company.org",
 			},
 		},
