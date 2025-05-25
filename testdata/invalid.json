@@ -1,0 +1,5 @@
+{
+    "smtp_server": "smtp.test.com",
+    "smtp_port": "invalid_port",
+    "missing_quote: "value"
+}
