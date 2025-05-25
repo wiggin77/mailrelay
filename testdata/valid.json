@@ -1,0 +1,16 @@
+{
+    "smtp_server": "smtp.test.com",
+    "smtp_port": 587,
+    "smtp_starttls": true,
+    "smtp_login_auth_type": false,
+    "smtp_username": "testuser@test.com",
+    "smtp_password": "testpassword",
+    "smtp_helo": "relay.test.com",
+    "smtp_skip_cert_verify": false,
+    "smtp_max_email_size": 10485760,
+    "local_listen_ip": "127.0.0.1",
+    "local_listen_port": 2525,
+    "allowed_hosts": ["test.com", "example.com"],
+    "allowed_senders": "*",
+    "timeout_secs": 60
+}
