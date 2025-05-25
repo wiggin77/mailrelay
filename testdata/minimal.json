@@ -1,0 +1,5 @@
+{
+    "smtp_server": "smtp.minimal.com",
+    "smtp_username": "user@minimal.com",
+    "smtp_password": "password"
+}

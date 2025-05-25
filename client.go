@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/smtp"
 	"net/textproto"
+	"strconv"
 
 	"github.com/flashmob/go-guerrilla/mail"
 	"github.com/pkg/errors"
@@ -19,7 +20,7 @@ type closeable interface {
 
 // sendMail sends the contents of the envelope to a SMTP server.
 func sendMail(e *mail.Envelope, config *relayConfig) error {
-	server := fmt.Sprintf("%s:%d", config.Server, config.Port)
+	server := net.JoinHostPort(config.Server, strconv.Itoa(config.Port))
 	to := getTo(e)
 
 	var msg bytes.Buffer
@@ -36,7 +37,7 @@ func sendMail(e *mail.Envelope, config *relayConfig) error {
 
 	if AllowedSendersFilter.Blocked(e.RemoteIP) {
 		Logger.Info("Remote IP of " + e.RemoteIP + " not allowed to send email.")
-		return errors.Wrap(err, "Remote IP of "+e.RemoteIP+" not allowed to send email.")
+		return errors.New("Remote IP of " + e.RemoteIP + " not allowed to send email.")
 	}
 
 	tlsconfig := &tls.Config{
