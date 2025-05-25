@@ -155,6 +155,9 @@ func isQuitError(err error) bool {
 
 // getTo returns the array of email addresses in the envelope.
 func getTo(e *mail.Envelope) []string {
+	if len(e.RcptTo) == 0 {
+		return nil
+	}
 	ret := make([]string, 0, len(e.RcptTo))
 	for i := range e.RcptTo {
 		ret = append(ret, e.RcptTo[i].String())
