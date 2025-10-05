@@ -17,7 +17,7 @@ const (
 func Start(appConfig *mailRelayConfig, verbose bool) (err error) {
 	listen := fmt.Sprintf("%s:%d", appConfig.LocalListenIP, appConfig.LocalListenPort)
 
-	logLevel := "info"
+	logLevel := appConfig.LogLevel
 	if verbose {
 		logLevel = "debug"
 	}

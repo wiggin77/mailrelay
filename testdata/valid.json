@@ -12,5 +12,6 @@
     "local_listen_port": 2525,
     "allowed_hosts": ["test.com", "example.com"],
     "allowed_senders": "*",
-    "timeout_secs": 60
+    "timeout_secs": 60,
+    "log_level": "error"
 }

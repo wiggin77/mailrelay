@@ -45,6 +45,7 @@ type mailRelayConfig struct {
 	AllowedHosts      []string `json:"allowed_hosts"`
 	AllowedSenders    string   `json:"allowed_senders"`
 	TimeoutSecs       int      `json:"timeout_secs"`
+	LogLevel          string   `json:"log_level"`
 }
 
 func main() {
@@ -69,7 +70,7 @@ func run() error {
 		return err
 	}
 
-	if err := setupLogger(verbose); err != nil {
+	if err := setupLogger(verbose, appConfig.LogLevel); err != nil {
 		return err
 	}
 
@@ -137,8 +138,7 @@ func setupIPFilter(appConfig *mailRelayConfig) error {
 	return nil
 }
 
-func setupLogger(verbose bool) error {
-	logLevel := "info"
+func setupLogger(verbose bool, logLevel string) error {
 	if verbose {
 		logLevel = "debug"
 	}
@@ -213,6 +213,7 @@ func configDefaults(config *mailRelayConfig) {
 	config.AllowedHosts = []string{"*"}
 	config.AllowedSenders = "*"
 	config.TimeoutSecs = DefaultTimeoutSecs
+	config.LogLevel = "info"
 }
 
 // validateConfig validates the configuration values.
